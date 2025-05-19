@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mobile Friendly Calculator</title>
+    <title>Mobile Friendly Calculator with Ads</title>
     <style>
         /* Basic Reset & Body Styling */
         * {
@@ -15,11 +15,24 @@
         body {
             font-family: 'Arial', sans-serif;
             display: flex;
+            flex-direction: column; /* To stack ads and calculator vertically */
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             background-color: #f0f2f5; /* Light gray background */
             padding: 10px; /* Add some padding for very small screens */
+        }
+
+        /* Ad Container Styling (Optional, but good for centering and spacing) */
+        .ad-container {
+            width: 100%;
+            max-width: 320px; /* Match ad width */
+            height: auto; /* Allow ad to define its height */
+            margin: 15px 0; /* Vertical spacing around ads */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            /* background-color: #ddd; */ /* Placeholder color if ad doesn't load */
         }
 
         /* Calculator Container */
@@ -48,7 +61,6 @@
             overflow-x: auto; /* Allow horizontal scroll for long numbers */
             white-space: nowrap; /* Prevent line breaks */
         }
-        /* Hide scrollbar for display (optional, for cleaner look) */
         #display::-webkit-scrollbar {
             display: none;
         }
@@ -56,7 +68,6 @@
             -ms-overflow-style: none;  /* IE and Edge */
             scrollbar-width: none;  /* Firefox */
         }
-
 
         /* Buttons Grid */
         .buttons {
@@ -111,15 +122,23 @@
         .equals:hover {
             background-color: #27ae60; /* Darker green on hover */
         }
-
-        /* Zero button can be wider if desired */
-        /* .zero {
-            grid-column: span 2;
-        } */
-
     </style>
 </head>
 <body>
+
+    <!-- Adsterra Ad - Top -->
+    <div class="ad-container" id="ad-top-container">
+        <script type="text/javascript">
+            atOptions = {
+                'key' : '4609e3aba66a2bdd4424b6cfaebefad2',
+                'format' : 'iframe',
+                'height' : 50,
+                'width' : 320,
+                'params' : {}
+            };
+        </script>
+        <script type="text/javascript" src="//www.highperformanceformat.com/4609e3aba66a2bdd4424b6cfaebefad2/invoke.js"></script>
+    </div>
 
     <div class="calculator">
         <input type="text" id="display" value="0" readonly>
@@ -146,16 +165,29 @@
 
             <button class="zero" onclick="appendNumber('0')">0</button>
             <button onclick="appendNumber('.')">.</button>
-            <!-- Placeholder for span 2 on equals -->
         </div>
+    </div>
+
+    <!-- Adsterra Ad - Bottom -->
+    <div class="ad-container" id="ad-bottom-container">
+        <script type="text/javascript">
+            atOptions = { // Re-declaring for the second ad. Adsterra might handle this or you might need a new ad unit.
+                'key' : '4609e3aba66a2bdd4424b6cfaebefad2',
+                'format' : 'iframe',
+                'height' : 50,
+                'width' : 320,
+                'params' : {}
+            };
+        </script>
+        <script type="text/javascript" src="//www.highperformanceformat.com/4609e3aba66a2bdd4424b6cfaebefad2/invoke.js"></script>
     </div>
 
     <script>
         const display = document.getElementById('display');
-        let currentInput = '0'; // Stores the current number being typed or result
-        let operator = null;    // Stores the last operator clicked
-        let previousInput = null; // Stores the input before an operator
-        let shouldResetDisplay = false; // Flag to reset display after operator or equals
+        let currentInput = '0';
+        let operator = null;
+        let previousInput = null;
+        let shouldResetDisplay = false;
 
         function updateDisplay() {
             display.value = currentInput;
@@ -168,7 +200,6 @@
                 currentInput = number;
                 shouldResetDisplay = false;
             } else {
-                // Prevent multiple decimal points
                 if (number === '.' && currentInput.includes('.')) return;
                 currentInput += number;
             }
@@ -176,17 +207,15 @@
         }
 
         function appendOperator(op) {
-            if (currentInput === '' && previousInput === null) return; // Nothing to operate on
+            if (currentInput === '' && previousInput === null) return;
 
-            // If there's an existing operation waiting, calculate it first
             if (operator && previousInput !== null && !shouldResetDisplay) {
-                calculateResultInternal(); // Calculate but don't reset flags like '=' does
+                calculateResultInternal();
             }
 
             operator = op;
             previousInput = currentInput;
-            shouldResetDisplay = true; // Next number input should clear the display
-            // No display update here, wait for next number or equals
+            shouldResetDisplay = true;
         }
 
         function clearDisplay() {
@@ -198,20 +227,18 @@
         }
 
         function deleteLast() {
-            if (shouldResetDisplay) { // If display was reset for new input, DEL does nothing
+            if (shouldResetDisplay) {
                 return;
             }
             if (currentInput.length > 1) {
                 currentInput = currentInput.slice(0, -1);
             } else {
-                currentInput = '0'; // If only one digit or empty, set to '0'
+                currentInput = '0';
             }
             updateDisplay();
         }
         
         function calculateResultInternal() {
-            // This function is for internal use (e.g., chaining operations)
-            // It doesn't reset operator or previousInput like the main calculateResult
             if (!operator || previousInput === null || currentInput === '') return false;
 
             let result;
@@ -221,7 +248,6 @@
             if (isNaN(prev) || isNaN(current)) {
                 currentInput = 'Error';
                 updateDisplay();
-                // Don't fully reset, allow user to clear
                 return false;
             }
 
@@ -237,9 +263,8 @@
                     break;
                 case '/':
                     if (current === 0) {
-                        currentInput = 'Error'; // Division by zero
+                        currentInput = 'Error';
                         updateDisplay();
-                        // Don't fully reset, allow user to clear
                         return false;
                     }
                     result = prev / current;
@@ -247,28 +272,20 @@
                 default:
                     return false;
             }
-            // Round to a reasonable number of decimal places to avoid floating point issues
             currentInput = parseFloat(result.toFixed(10)).toString();
             updateDisplay();
-            return true; // Calculation was successful
+            return true;
         }
-
 
         function calculateResult() {
             if (calculateResultInternal()) {
-                // After a successful '=', reset for a new calculation
-                // but keep the result in currentInput for potential further operations
-                previousInput = currentInput; // Store result as previous for chaining if user hits an operator next
+                previousInput = currentInput; 
                 operator = null;
-                shouldResetDisplay = true; // If user types a number, it starts a new input
+                shouldResetDisplay = true;
             }
-            // If calculateResultInternal returned false (error or no operation),
-            // the display is already showing "Error" or nothing changed.
         }
 
-        // Initialize display
         updateDisplay();
-
     </script>
 
 </body>
