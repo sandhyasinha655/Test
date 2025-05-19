@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catch the Stars - Kids Game</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #87CEEB; /* Sky Blue */
+            margin: 0;
+            overflow: hidden; /* Prevent scrollbars if game area is large */
+            touch-action: none; /* Prevents scrolling on touch for game area */
+        }
+
+        #game-container {
+            width: 90%;
+            max-width: 500px;
+            height: 400px;
+            background-color: #f0f0f0;
+            border: 5px solid #333;
+            position: relative; /* For absolute positioning of game elements */
+            overflow: hidden; /* Stars should not go outside */
+            cursor: none; /* Hide mouse cursor over game area */
+            box-shadow: 0 0 15px rgba(0,0,0,0.3);
+        }
+
+        #basket {
+            width: 80px;
+            height: 30px;
+            background-color: #A52A2A; /* Brown */
+            border: 2px solid #5F1A1A;
+            border-bottom-left-radius: 10px;
+            border-bottom-right-radius: 10px;
+            position: absolute;
+            bottom: 10px;
+            left: 50%; /* Initially centered */
+            transform: translateX(-50%);
+        }
+
+        .star {
+            width: 25px;
+            height: 25px;
+            /* background-color: gold; */
+            /* border-radius: 50%; */
+            position: absolute;
+            font-size: 25px; /* For using text character as star */
+            color: gold;
+            user-select: none; /* Prevent text selection */
+        }
+
+        #score-board {
+            margin-top: 20px;
+            font-size: 1.8em;
+            color: #333;
+            background-color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+        }
+
+        #start-button {
+            padding: 15px 30px;
+            font-size: 1.5em;
+            color: white;
+            background-color: #4CAF50; /* Green */
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: background-color 0.3s ease;
+        }
+        #start-button:hover {
+            background-color: #45a049;
+        }
+        #start-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        #instructions {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+
+    <button id="start-button" onclick="startGame()">Start Game</button>
+    <div id="score-board">Score: 0</div>
+    <div id="instructions">Move mouse to control the basket! (Touch also works)</div>
+
+    <div id="game-container">
+        <div id="basket"></div>
+        <!-- Stars will be added here by JavaScript -->
+    </div>
+
+    <script>
+        const gameContainer = document.getElementById('game-container');
+        const basket = document.getElementById('basket');
+        const scoreBoard = document.getElementById('score-board');
+        const startButton = document.getElementById('start-button');
+        const instructions = document.getElementById('instructions');
+
+        let score = 0;
+        let gameInterval;
+        let starCreationInterval;
+        let stars = []; // Array to hold star elements and their data
+        let gameSpeed = 2; // Initial speed of stars
+        let starCreationRate = 2000; // Milliseconds (2 seconds)
+
+        const gameContainerRect = gameContainer.getBoundingClientRect();
+
+        function updateScore() {
+            scoreBoard.textContent = `Score: ${score}`;
+        }
+
+        function moveBasket(event) {
+            let x;
+            if (event.type === 'touchmove' || event.type === 'touchstart') {
+                x = event.touches[0].clientX - gameContainerRect.left;
+            } else { // mousemove
+                x = event.clientX - gameContainerRect.left;
+            }
+            
+            // Constrain basket within gameContainer
+            const basketWidth = basket.offsetWidth;
+            if (x < basketWidth / 2) {
+                x = basketWidth / 2;
+            }
+            if (x > gameContainer.offsetWidth - basketWidth / 2) {
+                x = gameContainer.offsetWidth - basketWidth / 2;
+            }
+            basket.style.left = `${x - basketWidth / 2}px`;
+        }
+
+        function createStar() {
+            const starElement = document.createElement('div');
+            starElement.classList.add('star');
+            starElement.textContent = '⭐'; // Using emoji star
+
+            // Random horizontal position
+            const maxX = gameContainer.offsetWidth - starElement.offsetWidth;
+            starElement.style.left = `${Math.random() * maxX}px`;
+            starElement.style.top = `0px`; // Start from top
+
+            gameContainer.appendChild(starElement);
+            stars.push({
+                element: starElement,
+                y: 0,
+                speed: gameSpeed + Math.random() * 2 // Add some randomness to speed
+            });
+        }
+
+        function moveStars() {
+            stars.forEach((starObj, index) => {
+                starObj.y += starObj.speed;
+                starObj.element.style.top = `${starObj.y}px`;
+
+                // Collision detection with basket
+                const starRect = starObj.element.getBoundingClientRect();
+                const basketRect = basket.getBoundingClientRect();
+
+                if (
+                    starRect.bottom >= basketRect.top &&
+                    starRect.top <= basketRect.bottom &&
+                    starRect.right >= basketRect.left &&
+                    starRect.left <= basketRect.right
+                ) {
+                    score++;
+                    updateScore();
+                    starObj.element.remove(); // Remove star from DOM
+                    stars.splice(index, 1); // Remove star from array
+                    // Optional: Play a sound
+                } 
+                // Star missed (goes below container)
+                else if (starObj.y > gameContainer.offsetHeight) {
+                    starObj.element.remove();
+                    stars.splice(index, 1);
+                    // Optional: Decrease score or lives
+                }
+            });
+        }
+
+        function gameLoop() {
+            moveStars();
+        }
+
+        function startGame() {
+            startButton.disabled = true;
+            instructions.style.display = 'none';
+            score = 0;
+            updateScore();
+            stars.forEach(starObj => starObj.element.remove()); // Clear existing stars if any
+            stars = [];
+            
+            // Reset game parameters (can be increased over time for difficulty)
+            gameSpeed = 2; 
+            starCreationRate = 2000;
+
+            gameInterval = setInterval(gameLoop, 20); // Approx 50 FPS
+            starCreationInterval = setInterval(createStar, starCreationRate);
+
+            // Add event listeners for basket movement
+            gameContainer.addEventListener('mousemove', moveBasket);
+            gameContainer.addEventListener('touchmove', moveBasket, { passive: false }); // passive:false to allow preventDefault if needed
+            gameContainer.addEventListener('touchstart', moveBasket, { passive: false });
+
+
+            // Optional: Game duration or stop condition
+            // setTimeout(endGame, 30000); // End game after 30 seconds
+        }
+
+        function endGame() {
+            clearInterval(gameInterval);
+            clearInterval(starCreationInterval);
+            startButton.disabled = false;
+            instructions.style.display = 'block';
+            // Remove event listeners
+            gameContainer.removeEventListener('mousemove', moveBasket);
+            gameContainer.removeEventListener('touchmove', moveBasket);
+            gameContainer.removeEventListener('touchstart', moveBasket);
+
+            alert(`Game Over! Your score: ${score}`);
+        }
+
+        // Initial setup
+        updateScore();
+
+    </script>
+
+</body>
+</html>
