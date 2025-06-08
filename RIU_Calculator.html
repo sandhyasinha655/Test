@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RIU Scientific Calculator</title>
+    <style>
+        /* --- Basic Styling --- */
+        :root {
+            --bg-color: #f0f0f0;
+            --calculator-bg: #e0e0e0;
+            --display-bg: #d4d4d4;
+            --button-bg: #fafafa;
+            --button-hover-bg: #e8e8e8;
+            --operator-bg: #ff9f0a;
+            --operator-hover-bg: #fcae33;
+            --special-bg: #8e8e93;
+            --special-hover-bg: #a0a0a5;
+            --equals-bg: #34c759;
+            --equals-hover-bg: #40cf6b;
+            --text-color: #000;
+            --shadow: 5px 5px 15px rgba(0,0,0,0.1), -5px -5px 15px rgba(255,255,255,0.8);
+        }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: var(--bg-color);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* --- Calculator Container --- */
+        .calculator {
+            width: 100%;
+            max-width: 375px;
+            padding: 20px;
+            border-radius: 20px;
+            background-color: var(--calculator-bg);
+            box-shadow: var(--shadow);
+            box-sizing: border-box;
+        }
+
+        /* --- Display Screen --- */
+        #display {
+            width: 100%;
+            height: 70px;
+            font-size: 2.5rem; /* Numbers ke liye font size */
+            text-align: right;
+            border: none;
+            background-color: var(--display-bg);
+            border-radius: 10px;
+            padding: 10px 20px;
+            box-sizing: border-box;
+            margin-bottom: 20px;
+            color: var(--text-color);
+            box-shadow: inset 2px 2px 5px rgba(0,0,0,0.1), inset -2px -2px 5px rgba(255,255,255,0.8);
+        }
+        
+        /* Initial state ke liye special style (YAHAN BADLAV KIYA GAYA HAI) */
+        #display.initial {
+            text-align: center;
+            font-size: 1.4rem; /* Font size chhota kiya gaya taaki text fit ho */
+            font-weight: bold;
+            color: rgba(0, 0, 0, 0.5);
+            line-height: 50px; /* Text ko vertically center karne ke liye */
+        }
+
+        /* --- Button Grid --- */
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+        }
+
+        /* --- All Buttons --- */
+        button {
+            height: 60px;
+            border-radius: 15px;
+            border: none;
+            font-size: 1.4rem;
+            cursor: pointer;
+            background-color: var(--button-bg);
+            color: var(--text-color);
+            box-shadow: var(--shadow);
+            transition: all 0.1s ease-in-out;
+            font-weight: 500;
+        }
+
+        button:active {
+            box-shadow: inset 3px 3px 7px rgba(0,0,0,0.15), inset -3px -3px 7px rgba(255,255,255,0.7);
+            transform: scale(0.98);
+            font-size: 1.3rem;
+        }
+        
+        button.operator { background-color: var(--operator-bg); color: white; }
+        button.special { background-color: var(--special-bg); color: white; }
+        button.equals { background-color: var(--equals-bg); color: white; }
+    </style>
+</head>
+<body>
+
+    <div class="calculator">
+        <!-- Input value ko yahan update kiya gaya hai -->
+        <input type="text" id="display" class="initial" readonly value="Rajasthan Ispat Udyog">
+        <div class="buttons">
+            <!-- Rows of buttons remain the same -->
+            <button onclick="handleFunction('sin(')" class="special">SIN</button>
+            <button onclick="handleFunction('cos(')" class="special">COS</button>
+            <button onclick="handleFunction('tan(')" class="special">TAN</button>
+            <button onclick="clearAll()" class="special">AC</button>
+            <button onclick="backspace()" class="special">DEL</button>
+            
+            <button onclick="handleFunction('log(')" class="special">LOG</button>
+            <button onclick="handleFunction('ln(')" class="special">LN</button>
+            <button onclick="appendToDisplay('(')" class="special">(</button>
+            <button onclick="appendToDisplay(')')" class="special">)</button>
+            <button onclick="handleFunction('Math.sqrt(')" class="special">√</button>
+
+            <button onclick="handleFunction('**2')" class="special">x²</button>
+            <button onclick="appendToDisplay('7')">7</button>
+            <button onclick="appendToDisplay('8')">8</button>
+            <button onclick="appendToDisplay('9')">9</button>
+            <button onclick="appendToDisplay('/')" class="operator">÷</button>
+
+            <button onclick="handleFunction('Math.PI')" class="special">π</button>
+            <button onclick="appendToDisplay('4')">4</button>
+            <button onclick="appendToDisplay('5')">5</button>
+            <button onclick="appendToDisplay('6')">6</button>
+            <button onclick="appendToDisplay('*')" class="operator">×</button>
+            
+            <button onclick="handleFunction('Math.E')" class="special">e</button>
+            <button onclick="appendToDisplay('1')">1</button>
+            <button onclick="appendToDisplay('2')">2</button>
+            <button onclick="appendToDisplay('3')">3</button>
+            <button onclick="appendToDisplay('-')" class="operator">−</button>
+
+            <button onclick="appendToDisplay('**')" class="special">xʸ</button>
+            <button onclick="appendToDisplay('0')">0</button>
+            <button onclick="appendToDisplay('.')">.</button>
+            <button onclick="calculateResult()" class="equals">=</button>
+            <button onclick="appendToDisplay('+')" class="operator">+</button>
+        </div>
+    </div>
+
+    <script>
+        const display = document.getElementById('display');
+        let isInitialState = true; 
+
+        function checkInitialState() {
+            if (isInitialState) {
+                display.value = '';
+                isInitialState = false;
+                display.classList.remove('initial');
+                display.style.textAlign = 'right';
+                display.style.fontSize = '2.5rem'; // Font size wapas normal kar do
+            }
+        }
+
+        function appendToDisplay(value) {
+            checkInitialState();
+            display.value += value;
+        }
+
+        function handleFunction(func) {
+            checkInitialState();
+            if (func.endsWith('(') || func === 'Math.PI' || func === 'Math.E' || func === '**2') {
+                appendToDisplay(func);
+            }
+        }
+
+        function clearAll() {
+            // YAHAN BADLAV KIYA GAYA HAI
+            display.value = 'Rajasthan Ispat Udyog';
+            isInitialState = true;
+            display.classList.add('initial');
+            display.style.textAlign = 'center';
+            display.style.fontSize = '1.4rem'; // Font size chhota rakho
+        }
+
+        function backspace() {
+            if (isInitialState) return; 
+            display.value = display.value.slice(0, -1);
+            if(display.value === '') {
+                clearAll();
+            }
+        }
+
+        function calculateResult() {
+            if (isInitialState) return;
+            try {
+                let expression = display.value;
+                expression = expression.replace(/sin\(/g, 'Math.sin(Math.PI/180*');
+                expression = expression.replace(/cos\(/g, 'Math.cos(Math.PI/180*');
+                expression = expression.replace(/tan\(/g, 'Math.tan(Math.PI/180*');
+                expression = expression.replace(/log\(/g, 'Math.log10(');
+                expression = expression.replace(/ln\(/g, 'Math.log(');
+                
+                let result = eval(expression);
+
+                if (!Number.isInteger(result)) {
+                    result = parseFloat(result.toFixed(10));
+                }
+
+                display.value = result;
+                // Font-size normal karna calculation ke baad
+                display.classList.remove('initial');
+                display.style.fontSize = '2.5rem';
+
+            } catch (error) {
+                display.value = 'Error';
+            }
+            isInitialState = false;
+        }
+
+        // Initially display ko set karna
+        clearAll();
+    </script>
+
+</body>
+</html>
